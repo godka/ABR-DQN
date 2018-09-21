@@ -14,7 +14,10 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tflearn
-
+S_INFO = 6  # bit_rate, buffer_size, next_chunk_size, bandwidth_measurement(throughput and time), chunk_til_video_end
+S_LEN = 8  # take how many frames in the past
+A_DIM = 6
+FEATURE_NUM = 64
 np.random.seed(1)
 tf.set_random_seed(1)
 
@@ -72,35 +75,28 @@ class DeepQNetwork:
         self.q_target = tf.placeholder(
             tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
         with tf.variable_scope('eval_net'):
-            net = tf.expand_dims(self.s, -1)
-            net = tflearn.conv_1d(net, 32, 3, activation='relu')
-            net = tflearn.conv_1d(net, 64, 3, activation='relu')
-            net = tflearn.conv_1d(net, 64, 3, activation='relu')
-            net = tflearn.fully_connected(net, 4096, activation='relu')
-            net = tflearn.fully_connected(net, 1024, activation='relu')
-            net = tflearn.fully_connected(net, 128, activation='relu')
+            inputs = tf.reshape(self.s, (-1, S_INFO, S_LEN))
+            split_0 = tflearn.fully_connected(
+            inputs[:, 0:1, :], FEATURE_NUM, activation='relu')
+            split_1 = tflearn.fully_connected(
+                inputs[:, 1:2, :], FEATURE_NUM, activation='relu')
+            split_2 = tflearn.conv_1d(
+                inputs[:, 2:3, :], FEATURE_NUM, 4, activation='relu')
+            split_3 = tflearn.conv_1d(
+                inputs[:, 3:4, :], FEATURE_NUM, 4, activation='relu')
+            split_4 = tflearn.conv_1d(
+                inputs[:, 4:5, :self.n_actions], FEATURE_NUM, 4, activation='relu')
+            split_5 = tflearn.fully_connected(
+                inputs[:, 5:6, :], FEATURE_NUM, activation='relu')
+
+            split_2_flat = tflearn.flatten(split_2)
+            split_3_flat = tflearn.flatten(split_3)
+            split_4_flat = tflearn.flatten(split_4)
+
+            
+            net = tf.stack([split_0, split_1, split_2_flat, split_3_flat, split_4_flat, split_5], axis=1)
+            net = tflearn.fully_connected(net, FEATURE_NUM, activation='relu')
             self.q_eval = tflearn.fully_connected(net, self.n_actions, activation='softmax')
-            # # c_names(collections_names) are the collections to store variables
-            # c_names, n_l1, w_initializer, b_initializer = \
-            #     ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 10, \
-            #     tf.random_normal_initializer(
-            #         0., 0.3), tf.constant_initializer(0.1)  # config of layers
-
-            # # first layer. collections is used later when assign to target net
-            # with tf.variable_scope('l1'):
-            #     w1 = tf.get_variable(
-            #         'w1', [self.n_features, n_l1], initializer=w_initializer, collections=c_names)
-            #     b1 = tf.get_variable(
-            #         'b1', [1, n_l1], initializer=b_initializer, collections=c_names)
-            #     l1 = tf.nn.relu(tf.matmul(self.s, w1) + b1)
-
-            # # second layer. collections is used later when assign to target net
-            # with tf.variable_scope('l2'):
-            #     w2 = tf.get_variable(
-            #         'w2', [n_l1, self.n_actions], initializer=w_initializer, collections=c_names)
-            #     b2 = tf.get_variable(
-            #         'b2', [1, self.n_actions], initializer=b_initializer, collections=c_names)
-            #     self.q_eval = tf.matmul(l1, w2) + b2
 
         with tf.variable_scope('loss'):
             self.loss = tf.reduce_mean(
@@ -113,31 +109,29 @@ class DeepQNetwork:
         self.s_ = tf.placeholder(
             tf.float32, [None, self.n_features], name='s_')    # input
         with tf.variable_scope('target_net'):
-            # c_names(collections_names) are the collections to store variables
-            c_names = ['target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
-            net = tf.expand_dims(self.s, -1)
-            net = tflearn.conv_1d(net, 32, 3, activation='relu')
-            net = tflearn.conv_1d(net, 64, 3, activation='relu')
-            net = tflearn.conv_1d(net, 64, 3, activation='relu')
-            net = tflearn.fully_connected(net, 4096, activation='relu')
-            net = tflearn.fully_connected(net, 1024, activation='relu')
-            net = tflearn.fully_connected(net, 128, activation='relu')
-            self.q_next = tflearn.fully_connected(net, self.n_actions, activation='softmax')
-            # # first layer. collections is used later when assign to target net
-            # with tf.variable_scope('l1'):
-            #     w1 = tf.get_variable(
-            #         'w1', [self.n_features, n_l1], initializer=w_initializer, collections=c_names)
-            #     b1 = tf.get_variable(
-            #         'b1', [1, n_l1], initializer=b_initializer, collections=c_names)
-            #     l1 = tf.nn.relu(tf.matmul(self.s_, w1) + b1)
 
-            # # second layer. collections is used later when assign to target net
-            # with tf.variable_scope('l2'):
-            #     w2 = tf.get_variable(
-            #         'w2', [n_l1, self.n_actions], initializer=w_initializer, collections=c_names)
-            #     b2 = tf.get_variable(
-            #         'b2', [1, self.n_actions], initializer=b_initializer, collections=c_names)
-            #     self.q_next = tf.matmul(l1, w2) + b2
+            inputs = tf.reshape(self.s_, (-1, S_INFO, S_LEN))
+            split_0 = tflearn.fully_connected(
+            inputs[:, 0:1, :], FEATURE_NUM, activation='relu')
+            split_1 = tflearn.fully_connected(
+                inputs[:, 1:2, :], FEATURE_NUM, activation='relu')
+            split_2 = tflearn.conv_1d(
+                inputs[:, 2:3, :], FEATURE_NUM, 4, activation='relu')
+            split_3 = tflearn.conv_1d(
+                inputs[:, 3:4, :], FEATURE_NUM, 4, activation='relu')
+            split_4 = tflearn.conv_1d(
+                inputs[:, 4:5, :self.n_actions], FEATURE_NUM, 4, activation='relu')
+            split_5 = tflearn.fully_connected(
+                inputs[:, 5:6, :], FEATURE_NUM, activation='relu')
+
+            split_2_flat = tflearn.flatten(split_2)
+            split_3_flat = tflearn.flatten(split_3)
+            split_4_flat = tflearn.flatten(split_4)
+
+            
+            net = tf.stack([split_0, split_1, split_2_flat, split_3_flat, split_4_flat, split_5], axis=1)
+            net = tflearn.fully_connected(net, FEATURE_NUM, activation='relu')
+            self.q_next = tflearn.fully_connected(net, self.n_actions, activation='softmax')
 
     def store_transition(self, s, a, r, s_):
         if not hasattr(self, 'memory_counter'):

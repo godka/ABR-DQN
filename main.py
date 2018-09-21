@@ -10,9 +10,9 @@ A_DIM = 6
 
 env = gym.make('ABR-v0')
 
-RL = DeepQNetwork(n_actions=A_DIM, n_features=S_INFO*S_LEN, learning_rate=0.001, e_greedy=0.9,
+RL = DeepQNetwork(n_actions=A_DIM, n_features=S_INFO*S_LEN, learning_rate=1e-4, e_greedy=0.99,
                   replace_target_iter=100, memory_size=3000,
-                  e_greedy_increment=1e-8,)
+                  e_greedy_increment=1e-6,)
 
 _file = open('test.csv', 'w')
 step = 0
