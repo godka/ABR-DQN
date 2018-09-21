@@ -17,7 +17,8 @@ import tensorflow as tf
 np.random.seed(1)
 tf.set_random_seed(1)
 
-
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 # Deep Q Network off-policy
 class DeepQNetwork:
     def __init__(
@@ -52,8 +53,8 @@ class DeepQNetwork:
 
         # consist of [target_net, evaluate_net]
         self._build_net()
-
-        self.sess = tf.Session()
+        gpu_options = tf.GPUOptions(allow_growth=True)
+        self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
         if output_graph:
             # $ tensorboard --logdir=logs
@@ -155,7 +156,7 @@ class DeepQNetwork:
         # check to replace target parameters
         if self.learn_step_counter % self.replace_target_iter == 0:
             self._replace_target_params()
-            print('\ntarget_params_replaced\n')
+            #print('\ntarget_params_replaced\n')
 
         # sample batch memory from all memory
         if self.memory_counter > self.memory_size:

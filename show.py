@@ -28,7 +28,7 @@ def moving_average(data, alpha=0.9):
         _tmp.append(_val)
     return np.array(_tmp)
 
-
+plt.switch_backend('Agg')
 plt.rcParams['axes.labelsize'] = 24
 plt.rcParams['axes.labelweight'] = 'bold'
 font = {'size': 28}
@@ -37,7 +37,7 @@ fig, ax1 = plt.subplots(figsize=(15, 6), dpi=100)
 y_ = read_csv(sys.argv[1])
 ax1.grid(True)
 ax1.set_title(sys.argv[1])
-ax1.set_ylim(-100.5,100.)
+#ax1.set_ylim(-100.5,100.)
 l4 = ax1.plot(y_, color='red', lw=LW, alpha=0.3, label='original')
 # for p in range(3):
 l4 = ax1.plot(moving_average(y_), color='red', lw=LW, label='ma')

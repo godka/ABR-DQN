@@ -1,0 +1,4 @@
+gym
+tflearn
+tensorflow
+numpy

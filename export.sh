@@ -1,1 +1,1 @@
-export PYTHONPATH=$PYTHONPATH:/Users/mythkast/git/abr
+export PYTHONPATH=$PYTHONPATH:/mnt/sda1/godka/abr-dqn

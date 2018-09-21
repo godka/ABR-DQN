@@ -11,12 +11,14 @@ A_DIM = 6
 env = gym.make('ABR-v0')
 
 RL = DeepQNetwork(n_actions=A_DIM, n_features=S_INFO*S_LEN, learning_rate=0.001, e_greedy=0.9,
-                  replace_target_iter=300, memory_size=3000,
-                  e_greedy_increment=0.0002,)
+                  replace_target_iter=1000, memory_size=30000,
+                  e_greedy_increment=1e-6,)
 
 _file = open('test.csv', 'w')
 step = 0
-for episode in range(3000):
+episode = 0
+while True:
+#for episode in range(3000):
     # initial observation
     ep_r = 0.
     fetch = 0.
@@ -38,9 +40,12 @@ for episode in range(3000):
             break
         step += 1
     ep_r /= fetch
-    print('Epi: ', episode,
-        ', Ep_r: ', round(ep_r, 4),
-        ', Epsilon: ', round(RL.epsilon, 2))
+    if episode % 100 == 0:
+        print('Epi: ', episode,
+            ', Ep_r: ', round(ep_r, 4),
+            ', Epsilon: ', round(RL.epsilon, 2))
     _file.write(str(ep_r) + '\n')
     _file.flush()
+    episode += 1
+
 _file.close()
